@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGA Binary Image Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #111827;
+            color: #E5E7EB;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+            background-color: #1F2937;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #9CA3AF;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .port-info-line {
+            color: #9CA3AF;
+            font-size: 0.8rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background-color: rgba(17, 24, 39, 0.5);
+            border-radius: 0.5rem;
+            border: 1px solid #374151;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #D1D5DB;
+            font-size: 0.875rem;
+        }
+        
+        input[type="number"],
+        select {
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            color: #FFFFFF;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        input[type="file"] {
+            font-size: 0.875rem;
+            color: #9CA3AF;
+            cursor: pointer;
+        }
+        
+        input[type="file"]::file-selector-button {
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            background-color: #6366F1;
+            color: #FFFFFF;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+            background-color: #4F46E5;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-top: 0.5rem;
+        }
+        
+        .toggle-label {
+            font-size: 0.875rem;
+            color: #9CA3AF;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4B5563;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #6366F1;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        
+        .port-display {
+            display: none;
+        }
+        
+        .port-values {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 0.75rem;
+        }
+        
+        .port-value {
+            text-align: center;
+        }
+        
+        .port-value-label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .port-value-text {
+            font-size: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: #A5B4FC;
+        }
+        
+        .port-info {
+            text-align: center;
+            color: #9CA3AF;
+            font-size: 0.75rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #canvas-container {
+            flex: 1;
+            background-color: #111827;
+            border-radius: 0.5rem;
+            border: 1px solid #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            position: relative;
+            cursor: grab;
+            overflow: hidden;
+            padding: 0.5rem;
+        }
+        
+        #canvas-container.grabbing {
+            cursor: grabbing;
+        }
+        
+        #placeholder {
+            text-align: center;
+            color: #6B7280;
+            padding: 2rem;
+        }
+        
+        #placeholder svg {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            stroke: currentColor;
+        }
+        
+        #placeholder p:first-of-type {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        #placeholder p:last-of-type {
+            font-size: 0.875rem;
+        }
+        
+        canvas {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            transform-origin: 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        canvas.hidden {
+            display: none;
+        }
+        
+        #imageInfo {
+            text-align: center;
+            margin-top: 1rem;
+            color: #9CA3AF;
+            font-size: 0.875rem;
+            min-height: 1.25rem;
+        }
+        
+        select option {
+            padding: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding: 0.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CGA Binary Image Viewer</h1>
+            <p class="subtitle">Load any file and interpret its bytes as a 4-color CGA image.</p>
+            <p class="port-info-line" id="port3D9InfoLine">Port 3D9h: 0x00 (00000000) - BG: Black | PAL: 0 | INT: Low</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="fileInput">1. Select File</label>
+                <input type="file" id="fileInput"/>
+            </div>
+
+            <div class="control-group">
+                <label for="offsetInput">2. File Offset (bytes)</label>
+                <input type="number" id="offsetInput" value="0" min="0">
+            </div>
+
+            <div class="control-group">
+                <label for="widthInput">3. Width (bytes)</label>
+                <input type="number" id="widthInput" value="80" min="1">
+            </div>
+
+            <div class="control-group">
+                <label>4. Palette</label>
+                <div class="toggle-container">
+                    <span class="toggle-label">0</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="paletteToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">1</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="bgSelector">5. Background</label>
+                <select id="bgSelector"></select>
+            </div>
+        </div>
+
+        <div class="port-display">
+            <h2>Port 3D9h (Color Select Register)</h2>
+            <div class="port-values">
+                <div class="port-value">
+                    <span class="port-value-label">Hex Value</span>
+                    <span id="port3D9Hex" class="port-value-text">0x00</span>
+                </div>
+                <div class="port-value">
+                    <span class="port-value-label">Binary Value</span>
+                    <span id="port3D9Binary" class="port-value-text">00000000</span>
+                </div>
+            </div>
+            <div id="port3D9Info" class="port-info"></div>
+        </div>
+
+        <div id="canvas-container">
+            <div id="placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p>Your rendered image will appear here</p>
+                <p>Please select a file to begin.</p>
+            </div>
+            <canvas id="cgaCanvas" class="hidden"></canvas>
+        </div>
+        <div id="imageInfo"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const offsetInput = document.getElementById('offsetInput');
+        const widthInput = document.getElementById('widthInput');
+        const paletteToggle = document.getElementById('paletteToggle');
+        const bgSelector = document.getElementById('bgSelector');
+        const canvas = document.getElementById('cgaCanvas');
+        const canvasContainer = document.getElementById('canvas-container');
+        const placeholder = document.getElementById('placeholder');
+        const imageInfo = document.getElementById('imageInfo');
+        const port3D9Hex = document.getElementById('port3D9Hex');
+        const port3D9Binary = document.getElementById('port3D9Binary');
+        const port3D9Info = document.getElementById('port3D9Info');
+        const ctx = canvas.getContext('2d');
+
+        const PALETTE_0_LOW = ['#00AA00', '#AA0000', '#AA5500'];
+        const PALETTE_0_HIGH = ['#55FF55', '#FF5555', '#FFFF55'];
+        const PALETTE_1_LOW = ['#00AAAA', '#AA00AA', '#AAAAAA'];
+        const PALETTE_1_HIGH = ['#55FFFF', '#FF55FF', '#FFFFFF'];
+
+        const CGA_16_PALETTE = [
+            '#000000', '#0000AA', '#00AA00', '#00AAAA', '#AA0000', '#AA00AA', '#AA5500', '#AAAAAA',
+            '#555555', '#5555FF', '#55FF55', '#55FFFF', '#FF5555', '#FF55FF', '#FFFF55', '#FFFFFF'
+        ];
+        const CGA_16_NAMES = [
+            'Black', 'Blue', 'Green', 'Cyan', 'Red', 'Magenta', 'Brown', 'Light Gray',
+            'Dark Gray', 'Light Blue', 'Light Green', 'Light Cyan', 'Light Red', 'Light Magenta', 'Yellow', 'White'
+        ];
+
+        let fileBytes = null;
+        let currentScale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isPanning = false;
+
+        fileInput.addEventListener('change', handleFileSelect);
+        offsetInput.addEventListener('input', () => renderImage());
+        widthInput.addEventListener('input', () => renderImage());
+        paletteToggle.addEventListener('change', () => {
+            updatePort3D9Display();
+            renderImage(false);
+        });
+        bgSelector.addEventListener('change', () => {
+            updatePort3D9Display();
+            renderImage(false);
+        });
+        
+        canvasContainer.addEventListener('mousedown', (e) => {
+            if (!fileBytes) return;
+            isPanning = true;
+            canvasContainer.classList.add('grabbing');
+        });
+
+        canvasContainer.addEventListener('mouseup', () => {
+            isPanning = false;
+            canvasContainer.classList.remove('grabbing');
+        });
+        
+        canvasContainer.addEventListener('mouseleave', () => {
+            isPanning = false;
+            canvasContainer.classList.remove('grabbing');
+        });
+
+        canvasContainer.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            translateX += e.movementX;
+            translateY += e.movementY;
+            applyTransform();
+        });
+
+        canvasContainer.addEventListener('wheel', (e) => {
+            if (!fileBytes) return;
+            e.preventDefault();
+
+            const rect = canvasContainer.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const zoomDirection = e.deltaY < 0 ? 1.1 : 0.9;
+            const newScale = currentScale * zoomDirection;
+            
+            const minScale = 0.5;
+            const maxScale = 50;
+            
+            if (newScale < minScale || newScale > maxScale) return;
+
+            translateX = mouseX - (mouseX - translateX) * zoomDirection;
+            translateY = mouseY - (mouseY - translateY) * zoomDirection;
+            
+            currentScale = newScale;
+            applyTransform();
+        });
+        
+        function applyTransform() {
+            canvas.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+            updateImageInfo();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                fileBytes = null;
+                placeholder.classList.remove('hidden');
+                canvas.classList.add('hidden');
+                imageInfo.textContent = '';
+                canvasContainer.style.backgroundColor = '#111827';
+                bgSelector.selectedIndex = 0;
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                fileBytes = new Uint8Array(e.target.result);
+                renderImage(true);
+            };
+            reader.onerror = (e) => {
+                console.error("File could not be read!", e);
+                fileBytes = null;
+                imageInfo.textContent = 'Error: Could not read the file.';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderImage(fullReset = true) {
+            if (!fileBytes) return;
+            
+            const offset = parseInt(offsetInput.value, 10) || 0;
+            const widthInBytes = parseInt(widthInput.value, 10) || 80;
+
+            if (offset < 0 || widthInBytes <= 0 || offset >= fileBytes.length) {
+                imageInfo.textContent = 'Invalid offset or width.';
+                return;
+            }
+            
+            placeholder.classList.add('hidden');
+            canvas.classList.remove('hidden');
+
+            const pixelWidth = widthInBytes * 4;
+            const dataBytes = fileBytes.length - offset;
+            const pixelHeight = Math.floor(dataBytes / widthInBytes);
+            
+            if (pixelHeight <= 0) {
+                imageInfo.textContent = 'Not enough data to render an image with current settings.';
+                canvas.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                return;
+            }
+
+            if (fullReset) {
+                const containerWidth = canvasContainer.clientWidth;
+                const containerHeight = canvasContainer.clientHeight;
+
+                currentScale = 1;
+                translateX = (containerWidth - pixelWidth) / 2;
+                translateY = (containerHeight - pixelHeight) / 2;
+
+                canvas.width = pixelWidth;
+                canvas.height = pixelHeight;
+            }
+
+            applyTransform();
+            
+            const bgColor = bgSelector.value;
+            canvasContainer.style.backgroundColor = bgColor;
+
+            const bgIndex = bgSelector.selectedIndex;
+            const isPalette1 = paletteToggle.checked;
+            const isHighIntensity = (bgIndex >= 8);
+            
+            let baseColors;
+            if (isPalette1) {
+                baseColors = isHighIntensity ? PALETTE_1_HIGH : PALETTE_1_LOW;
+            } else {
+                baseColors = isHighIntensity ? PALETTE_0_HIGH : PALETTE_0_LOW;
+            }
+            
+            const activePalette = [bgColor, ...baseColors];
+
+            ctx.fillStyle = activePalette[0];
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            updateImageInfo();
+
+            for (let y = 0; y < pixelHeight; y++) {
+                for (let xByte = 0; xByte < widthInBytes; xByte++) {
+                    const byteIndex = offset + (y * widthInBytes) + xByte;
+                    if (byteIndex >= fileBytes.length) break;
+
+                    const byte = fileBytes[byteIndex];
+
+                    const p1 = (byte >> 6) & 3;
+                    const p2 = (byte >> 4) & 3;
+                    const p3 = (byte >> 2) & 3;
+                    const p4 = (byte >> 0) & 3;
+
+                    const currentPixelX = xByte * 4;
+
+                    ctx.fillStyle = activePalette[p1];
+                    ctx.fillRect(currentPixelX, y, 1, 1);
+
+                    ctx.fillStyle = activePalette[p2];
+                    ctx.fillRect(currentPixelX + 1, y, 1, 1);
+
+                    ctx.fillStyle = activePalette[p3];
+                    ctx.fillRect(currentPixelX + 2, y, 1, 1);
+
+                    ctx.fillStyle = activePalette[p4];
+                    ctx.fillRect(currentPixelX + 3, y, 1, 1);
+                }
+            }
+        }
+        
+        function updateImageInfo() {
+            if (!fileBytes) {
+                imageInfo.textContent = '';
+                return;
+            }
+            const widthInBytes = parseInt(widthInput.value, 10) || 80;
+            const offset = parseInt(offsetInput.value, 10) || 0;
+            const pixelWidth = widthInBytes * 4;
+            const dataBytes = fileBytes.length - offset;
+            const pixelHeight = Math.max(0, Math.floor(dataBytes / widthInBytes));
+            
+            imageInfo.textContent = `Image: ${pixelWidth}px x ${pixelHeight}px | Zoom: ${currentScale.toFixed(2)}x`;
+        }
+        
+        function updatePort3D9Display() {
+            const bgIndex = bgSelector.selectedIndex;
+            const isPalette1 = paletteToggle.checked;
+            
+            let portValue = 0;
+            
+            // Bits 0-3: Background Color (only lower 4 bits)
+            portValue |= (bgIndex & 0x0F);
+            
+            // Bit 5: Palette Select (0 = palette 0, 1 = palette 1)
+            if (isPalette1) {
+                portValue |= (1 << 5);
+            }
+            
+            const hexValue = '0x' + portValue.toString(16).toUpperCase().padStart(2, '0');
+            const binaryValue = portValue.toString(2).padStart(8, '0');
+            const decimalValue = portValue;
+            
+            let info = `Port 3D9h: ${hexValue} (${binaryValue}) [${decimalValue}] - BG: ${CGA_16_NAMES[bgIndex]} | PAL: ${isPalette1 ? '1' : '0'}`;
+            document.getElementById('port3D9InfoLine').textContent = info;
+        }
+
+        function initBgSelector() {
+            CGA_16_PALETTE.forEach((color, index) => {
+                const option = document.createElement('option');
+                option.value = color;
+                option.textContent = CGA_16_NAMES[index];
+                option.style.backgroundColor = color;
+                
+                if (['#FFFFFF', '#FFFF55', '#55FFFF', '#55FF55'].includes(color)) {
+                    option.style.color = '#111827';
+                } else {
+                    option.style.color = '#FFFFFF';
+                }
+               
+                bgSelector.appendChild(option);
+            });
+        }
+        
+        initBgSelector();
+        updatePort3D9Display();
+    </script>
+</body>
+</html>
