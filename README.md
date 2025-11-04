@@ -1,4 +1,4 @@
-![CGA Mix images](images\cga_mix.png "CGA Mix")
+![CGA Mix images](images/cga_mix.png "CGA Mix")
 Tools that can help you working with PAK format that using in Big Blue Disk disk magazine. It also help with import export CGA graphics.
 
 ## Disclaimer
@@ -46,4 +46,4 @@ Allow user to show pak file header information, unpack the file or pack the bina
 
 ### PAKVIEW.EXE
 
-Allow user to view pak file as a image using CGA graphics adapter. For windows it create the separate window that emulate CGA video adapter.
+Allow user to view pak file as a image using CGA graphics adapter. For windows it create the separate window that emulate CGA video adapter. 
