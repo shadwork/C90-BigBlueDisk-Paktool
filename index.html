@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Menu</title>
+    <!-- Load Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8">
+        <h1 class="text-3xl font-bold text-center text-blue-600 dark:text-blue-400 mb-8">
+            Project Tools
+        </h1>
+        
+        <div class="space-y-4">
+            <!-- Link to PAK Viewer -->
+            <a href="pak_viewer.html" 
+               class="block w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-semibold py-3 px-5 rounded-lg text-center transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-md">
+                PAK Viewer
+            </a>
+            
+            <!-- Link to CGA Viewer -->
+            <a href="cga_viewer.html" 
+               class="block w-full bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white font-semibold py-3 px-5 rounded-lg text-center transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-md">
+                CGA Viewer
+            </a>
+            
+            <!-- Link to CGA Exporter -->
+            <a href="cga_exporter.html" 
+               class="block w-full bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-semibold py-3 px-5 rounded-lg text-center transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-md">
+                CGA Exporter
+            </a>
+        </div>
+        
+        <p class="text-center text-gray-500 dark:text-gray-400 mt-8 text-sm">
+            Select a tool to begin.
+        </p>
+    </div>
+
+</body>
+</html>
