@@ -34,6 +34,61 @@
         header {
             text-align: center;
             margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .header-images {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .header-image-container {
+            width: 160px;
+            height: 100px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.375rem;
+            border: 2px solid #374151;
+            background-color: #111827;
+        }
+
+        .header-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .header-image.fade-out {
+            animation: pixelFadeOut 0.5s forwards;
+        }
+
+        .header-image.fade-in {
+            animation: pixelFadeIn 0.5s forwards;
+        }
+
+        @keyframes pixelFadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes pixelFadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .title-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         h1 {
@@ -171,14 +226,37 @@
             .container {
                 padding: 1.5rem;
             }
+
+            .header-images {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .header-image-container {
+                width: 120px;
+                height: 75px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>CGA Tools Suite</h1>
-            <p class="subtitle">Cross-platform tools for working with Big Blue Disk PAK format and CGA graphics</p>
+            <div class="header-images">
+                <div class="header-image-container">
+                    <img id="leftImage" class="header-image" src="cat.png" alt="CGA Image">
+                </div>
+                <div class="title-wrapper">
+                    <div>
+                        <h1>CGA Tools Suite</h1>
+                        <p class="subtitle">Cross-platform tools for working with Big Blue Disk PAK format and CGA graphics</p>
+                    </div>
+                </div>
+                <div class="header-image-container">
+                    <img id="rightImage" class="header-image" src="clown.png" alt="CGA Image">
+                </div>
+            </div>
         </header>
 
         <div class="about-section">
@@ -225,5 +303,61 @@
             <p>Tools for Big Blue Disk PAK format · Select a tool above to begin</p>
         </footer>
     </div>
+
+    <script>
+        const images = ['cat.png', 'clown.png', 'comp.png', 'meteor.png', 'ninja.png', 'pigeon.png'];
+        const leftImage = document.getElementById('leftImage');
+        const rightImage = document.getElementById('rightImage');
+        
+        let leftIndex = 0;
+        let rightIndex = 1;
+
+        function getRandomDelay() {
+            return Math.random() * 4000 + 2000; // 2-6 seconds
+        }
+
+        function cycleImage(imageElement, isLeft) {
+            const currentIndex = isLeft ? leftIndex : rightIndex;
+            let newIndex;
+            
+            // Get a different image than currently displayed
+            do {
+                newIndex = Math.floor(Math.random() * images.length);
+            } while (newIndex === currentIndex);
+            
+            if (isLeft) {
+                leftIndex = newIndex;
+            } else {
+                rightIndex = newIndex;
+            }
+
+            // Create new image element
+            const newImg = document.createElement('img');
+            newImg.className = 'header-image fade-in';
+            newImg.src = images[newIndex];
+            newImg.alt = 'CGA Image';
+
+            // Fade out current image
+            imageElement.classList.add('fade-out');
+
+            // After fade out completes, swap images
+            setTimeout(() => {
+                imageElement.src = newImg.src;
+                imageElement.classList.remove('fade-out');
+                imageElement.classList.add('fade-in');
+                
+                setTimeout(() => {
+                    imageElement.classList.remove('fade-in');
+                }, 500);
+            }, 500);
+
+            // Schedule next change
+            setTimeout(() => cycleImage(imageElement, isLeft), getRandomDelay());
+        }
+
+        // Start cycling with random delays
+        setTimeout(() => cycleImage(leftImage, true), getRandomDelay());
+        setTimeout(() => cycleImage(rightImage, false), getRandomDelay());
+    </script>
 </body>
 </html>
