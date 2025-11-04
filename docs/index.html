@@ -3,47 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tool Menu</title>
-    <!-- Load Tailwind CSS from CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>CGA Tools Suite</title>
     <style>
-        /* Custom font */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #111827;
+            color: #E5E7EB;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #1F2937;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #9CA3AF;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .about-section {
+            background-color: rgba(17, 24, 39, 0.5);
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .about-section h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #E5E7EB;
+            margin-bottom: 0.75rem;
+        }
+
+        .about-section p {
+            color: #9CA3AF;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            margin-bottom: 0.75rem;
+        }
+
+        .about-section p:last-child {
+            margin-bottom: 0;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 640px) {
+            .tools-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 900px) {
+            .tools-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .tool-card {
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tool-card:hover {
+            background-color: #4B5563;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .tool-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #FFFFFF;
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-card p {
+            color: #9CA3AF;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        .tool-card .tool-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .tool-icon path {
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .pak-card {
+            border-left: 3px solid #10B981;
+        }
+
+        .cga-card {
+            border-left: 3px solid #6366F1;
+        }
+
+        .export-card {
+            border-left: 3px solid #7C3AED;
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid #374151;
+        }
+
+        footer p {
+            color: #6B7280;
+            font-size: 0.8125rem;
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center min-h-screen p-4">
+<body>
+    <div class="container">
+        <header>
+            <h1>CGA Tools Suite</h1>
+            <p class="subtitle">Cross-platform tools for working with Big Blue Disk PAK format and CGA graphics</p>
+        </header>
 
-    <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8">
-        <h1 class="text-3xl font-bold text-center text-blue-600 dark:text-blue-400 mb-8">
-            Project Tools
-        </h1>
-        
-        <div class="space-y-4">
-            <!-- Link to PAK Viewer -->
-            <a href="pak_viewer.html" 
-               class="block w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-semibold py-3 px-5 rounded-lg text-center transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-md">
-                PAK Viewer
+        <div class="about-section">
+            <h2>About This Project</h2>
+            <p>
+                These tools help you work with the PAK format used in Big Blue Disk, an IBM PC disk magazine 
+                released by Softdisk in 1986. The magazine's content was written in QBASIC and Turbo Pascal, 
+                with graphics stored as full-screen compressed CGA images.
+            </p>
+            <p>
+                The PAK format uses a custom RLE (Run-Length Encoding) compression with embedded CGA palette 
+                information. These web-based tools allow you to view, analyze, and export CGA graphics 
+                directly in your browser.
+            </p>
+        </div>
+
+        <div class="tools-grid">
+            <a href="pak_viewer.html" class="tool-card pak-card">
+                <svg class="tool-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3>PAK Viewer</h3>
+                <p>Load and view compressed .pak files. Automatically decodes RLE compression and displays CGA images with the embedded palette.</p>
             </a>
-            
-            <!-- Link to CGA Viewer -->
-            <a href="cga_viewer.html" 
-               class="block w-full bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white font-semibold py-3 px-5 rounded-lg text-center transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-md">
-                CGA Viewer
+
+            <a href="cga_viewer.html" class="tool-card cga-card">
+                <svg class="tool-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <h3>CGA Viewer</h3>
+                <p>Interpret any binary file as CGA image data. Adjust width, offset, palette, and background color to visualize raw data.</p>
             </a>
-            
-            <!-- Link to CGA Exporter -->
-            <a href="cga_exporter.html" 
-               class="block w-full bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-semibold py-3 px-5 rounded-lg text-center transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-md">
-                CGA Exporter
+
+            <a href="cga_exporter.html" class="tool-card export-card">
+                <svg class="tool-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <h3>CGA Exporter</h3>
+                <p>Load PNG images, extract their palette, and export as 2-bit packed binary data suitable for CGA display.</p>
             </a>
         </div>
-        
-        <p class="text-center text-gray-500 dark:text-gray-400 mt-8 text-sm">
-            Select a tool to begin.
-        </p>
-    </div>
 
+        <footer>
+            <p>Tools for Big Blue Disk PAK format · Select a tool above to begin</p>
+        </footer>
+    </div>
 </body>
 </html>
