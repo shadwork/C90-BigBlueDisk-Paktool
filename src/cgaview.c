@@ -5,7 +5,12 @@
 #ifdef WINDOWS
 #include "cga_win.h"
 #include "bios_win.h"
-#else
+#endif
+#ifdef MAC
+#include "cga_mac.h"
+#include "bios_mac.h"
+#endif
+#ifdef DOS
 #include "cga_dos.h"
 #include <bios.h>
 #endif
@@ -48,6 +53,8 @@ int main(int argc, char* argv[])
 
     if (argc < 2)
     {
+        printf("CGA raw image viewer. Version 1.0.0 By Imp Possible 2025\n");          
+        printf("Change palette and background color with cursor keys. Esc to quit.\n");          
         printf("cgaview file.pak            -- switch to CGA and show cga image from file\n");        
         return(RETURN_SUCCESS);
     }else if(argc < 3)
@@ -93,10 +100,8 @@ int main(int argc, char* argv[])
             
 
         }while(inkey != 0x011b);
-
-        return RETURN_SUCCESS;
+        set_mode_text80();
     }   
-    set_mode_text80();
     destroy_cga();
     return(RETURN_SUCCESS);
 }
