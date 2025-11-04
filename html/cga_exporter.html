@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGA Image Exporter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: #111827;
+            color: #f3f4f6;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .header {
+            max-width: 1280px;
+            margin: 0 auto 1.5rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: bold;
+        }
+
+        .header p {
+            color: #9ca3af;
+            margin-top: 0.5rem;
+        }
+
+        .main-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 1024px) {
+            .main-container {
+                flex-direction: row;
+            }
+        }
+
+        .viewer-column {
+            flex-grow: 1;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .controls {
+                flex-direction: row;
+            }
+        }
+
+        .file-input {
+            display: block;
+            width: 100%;
+            font-size: 0.875rem;
+            color: #d1d5db;
+            padding: 0.5rem;
+            background-color: #1f2937;
+            border: 2px solid #374151;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+
+        .file-input::-webkit-file-upload-button {
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background-color: #7c3aed;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .file-input::-webkit-file-upload-button:hover {
+            background-color: #6d28d9;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-reset {
+            background-color: #4b5563;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background-color: #6b7280;
+        }
+
+        .btn-export {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .btn-export:hover:not(:disabled) {
+            background-color: #3b82f6;
+        }
+
+        .btn-export:disabled {
+            background-color: #374151;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+
+        .viewport {
+            width: 100%;
+            height: 75vh;
+            border: 2px solid #374151;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            position: relative;
+            cursor: grab;
+            background-image: 
+                repeating-linear-gradient(45deg, #444 25%, transparent 25%, transparent 75%, #444 75%, #444), 
+                repeating-linear-gradient(45deg, #444 25%, transparent 25%, transparent 75%, #444 75%, #444);
+            background-position: 0 0, 10px 10px;
+            background-size: 20px 20px;
+            background-color: #333;
+        }
+
+        .viewport.grabbing {
+            cursor: grabbing;
+        }
+
+        .instructions {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 1.25rem;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .instructions.hidden {
+            display: none;
+        }
+
+        #pixel-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: -o-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            transform-origin: 0 0;
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+
+        #pixel-image.hidden {
+            display: none;
+        }
+
+        .palette-column {
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        @media (min-width: 1024px) {
+            .palette-column {
+                width: 25%;
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .palette-column {
+                width: 20%;
+            }
+        }
+
+        .palette-column h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #e5e7eb;
+        }
+
+        #palette-container {
+            background-color: #1f2937;
+            border: 2px solid #374151;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 75vh;
+            overflow-y: auto;
+        }
+
+        .palette-text {
+            color: #9ca3af;
+        }
+
+        .palette-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .palette-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem;
+            background-color: #374151;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .palette-item:hover {
+            background-color: #4b5563;
+        }
+
+        .color-swatch {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid #6b7280;
+            flex-shrink: 0;
+        }
+
+        .color-index {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            width: 2rem;
+            text-align: right;
+            padding-right: 0.5rem;
+            font-family: monospace;
+            flex-shrink: 0;
+        }
+
+        .color-text {
+            font-size: 0.75rem;
+            color: #e5e7eb;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #palette-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #palette-container::-webkit-scrollbar-track {
+            background: #1f2937;
+            border-radius: 4px;
+        }
+
+        #palette-container::-webkit-scrollbar-thumb {
+            background: #6b7280;
+            border-radius: 4px;
+        }
+
+        #palette-container::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="header">
+        <h1>CGA Image Exporter</h1>
+        <p>Load a PNG, pan with drag, zoom with scroll. Click a color in the palette to copy it.</p>
+    </div>
+
+    <div class="main-container">
+    
+        <div class="viewer-column">
+            <div class="controls">
+                <input type="file" id="file-input" accept="image/png" class="file-input">
+                <button id="reset-button" class="btn btn-reset">Reset View</button>
+                <button id="export-button" class="btn btn-export" disabled>Export 2-bit</button>
+            </div>
+            
+            <div id="viewport" class="viewport">
+                <div id="instructions" class="instructions">
+                    <p>Load a PNG file to begin</p>
+                </div>
+                <img id="pixel-image" alt="Loaded pixel art" class="hidden">
+            </div>
+        </div>
+        
+        <div class="palette-column">
+            <h2>Image Palette</h2>
+            <div id="palette-container">
+                <p class="palette-text">Load an image to see its unique colors.</p>
+            </div>
+        </div>
+    
+    </div>
+
+    <canvas id="pixel-canvas" class="hidden"></canvas>
+
+    <script>
+        const viewport = document.getElementById('viewport');
+        const image = document.getElementById('pixel-image');
+        const fileInput = document.getElementById('file-input');
+        const resetButton = document.getElementById('reset-button');
+        const instructions = document.getElementById('instructions');
+        const paletteContainer = document.getElementById('palette-container');
+        const pixelCanvas = document.getElementById('pixel-canvas');
+        const ctx = pixelCanvas.getContext('2d', { willReadFrequently: true });
+        const exportButton = document.getElementById('export-button');
+
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let panStartX = 0;
+        let panStartY = 0;
+        const MIN_SCALE = 0.1;
+        const MAX_SCALE = 50;
+        let currentObjectUrl = null;
+        let currentPalette = [];
+
+        function updateTransform() {
+            image.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        }
+
+        function centerAndResetView() {
+            if (!image.src) return;
+            const viewportRect = viewport.getBoundingClientRect();
+            const imgWidth = image.naturalWidth;
+            const imgHeight = image.naturalHeight;
+            scale = 1;
+            panX = (viewportRect.width - imgWidth * scale) / 2;
+            panY = (viewportRect.height - imgHeight * scale) / 2;
+            updateTransform();
+        }
+
+        function extractAndDisplayPalette() {
+            if (!image.src || image.naturalWidth === 0) return;
+            
+            pixelCanvas.width = image.naturalWidth;
+            pixelCanvas.height = image.naturalHeight;
+            ctx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+            ctx.drawImage(image, 0, 0);
+            
+            let imageData;
+            try {
+                imageData = ctx.getImageData(0, 0, pixelCanvas.width, pixelCanvas.height);
+            } catch (e) {
+                console.error("Error reading image data:", e);
+                paletteContainer.innerHTML = '<p class="palette-text">Could not analyze colors. (CORS issue?)</p>';
+                return;
+            }
+            
+            const data = imageData.data;
+            const uniqueColors = new Set();
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i+1];
+                const b = data[i+2];
+                const a = data[i+3];
+                const colorString = `rgba(${r}, ${g}, ${b}, ${a / 255})`; 
+                uniqueColors.add(colorString);
+            }
+            
+            displayPalette(Array.from(uniqueColors), 'scan');
+        }
+        
+        function getStringFromBytes(dataView, offset) {
+            return String.fromCharCode(
+                dataView.getUint8(offset),
+                dataView.getUint8(offset + 1),
+                dataView.getUint8(offset + 2),
+                dataView.getUint8(offset + 3)
+            );
+        }
+
+        function parsePngForPlte(arrayBuffer) {
+            const view = new DataView(arrayBuffer);
+            if (view.getUint32(0) !== 0x89504E47 || view.getUint32(4) !== 0x0D0A1A0A) {
+                console.error("Not a valid PNG file.");
+                return null;
+            }
+
+            let offset = 8;
+            let plteData = null;
+            let trnsData = null;
+
+            try {
+                while (offset < arrayBuffer.byteLength) {
+                    const length = view.getUint32(offset);
+                    const type = getStringFromBytes(view, offset + 4);
+                    const dataOffset = offset + 8;
+                    const nextChunkOffset = offset + 12 + length;
+
+                    if (type === 'PLTE') {
+                        if (length % 3 !== 0) {
+                            console.error("Invalid PLTE chunk length.");
+                            return null;
+                        }
+                        plteData = new Uint8Array(arrayBuffer, dataOffset, length);
+                    } else if (type === 'tRNS') {
+                        trnsData = new Uint8Array(arrayBuffer, dataOffset, length);
+                    } else if (type === 'IDAT' || type === 'IEND') {
+                        if (plteData) break;
+                    }
+                    if (type === 'IEND') break;
+                    offset = nextChunkOffset;
+                }
+            } catch (e) {
+                console.error("Error parsing PNG chunks:", e);
+                return null;
+            }
+
+            if (!plteData) {
+                console.log("No embedded PLTE (palette) chunk found.");
+                return null;
+            }
+
+            console.log(`Found PLTE chunk with ${plteData.length / 3} colors.`);
+            const colors = [];
+            for (let i = 0; i < plteData.length; i += 3) {
+                const r = plteData[i];
+                const g = plteData[i + 1];
+                const b = plteData[i + 2];
+                let a = 255;
+                const paletteIndex = i / 3;
+                if (trnsData && trnsData.length > paletteIndex) {
+                    a = trnsData[paletteIndex];
+                }
+                colors.push(`rgba(${r}, ${g}, ${b}, ${a / 255})`);
+            }
+            return colors;
+        }
+
+        function displayPalette(colors, source = 'scan') {
+            currentPalette = colors;
+            paletteContainer.innerHTML = '';
+
+            if (colors.length === 0) {
+                paletteContainer.innerHTML = '<p class="palette-text">No colors found in image.</p>';
+                return;
+            }
+            
+            const sourceText = source === 'plte' ? '(from embedded PLTE)' : '(from pixel scan)';
+            const countEl = document.createElement('p');
+            countEl.className = "palette-text";
+            countEl.style.fontSize = '0.875rem';
+            countEl.style.marginBottom = '0.75rem';
+            countEl.textContent = `Found ${colors.length} unique colors ${sourceText}.`;
+            paletteContainer.appendChild(countEl);
+
+            const list = document.createElement('div');
+            list.className = "palette-list";
+            
+            if (source === 'scan') {
+                colors.sort(); 
+            }
+            
+            colors.forEach((color, index) => {
+                const item = document.createElement('div');
+                item.className = "palette-item";
+                
+                if (source === 'plte') {
+                    const indexEl = document.createElement('span');
+                    indexEl.className = "color-index";
+                    indexEl.textContent = index;
+                    item.appendChild(indexEl);
+                    item.title = `Index: ${index} - Click to copy color`;
+                } else {
+                    item.title = "Click to copy color";
+                }
+                
+                const swatch = document.createElement('div');
+                swatch.className = "color-swatch";
+                swatch.style.backgroundColor = color;
+                
+                if (color.startsWith('rgba') && parseFloat(color.split(',')[3]) < 1) {
+                    swatch.style.backgroundImage = `repeating-linear-gradient(45deg, #bbb 25%, transparent 25%, transparent 75%, #bbb 75%, #bbb), repeating-linear-gradient(45deg, #bbb 25%, transparent 25%, transparent 75%, #bbb 75%, #bbb)`;
+                    swatch.style.backgroundPosition = "0 0, 4px 4px";
+                    swatch.style.backgroundSize = "8px 8px";
+                }
+                
+                const text = document.createElement('span');
+                text.className = "color-text";
+                text.textContent = color;
+                
+                item.appendChild(swatch);
+                item.appendChild(text);
+                
+                item.addEventListener('click', () => {
+                    try {
+                        const tempInput = document.createElement('textarea');
+                        tempInput.style.position = 'absolute';
+                        tempInput.style.left = '-9999px';
+                        tempInput.value = color;
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        
+                        const originalText = text.textContent;
+                        text.textContent = 'Copied!';
+                        setTimeout(() => { text.textContent = originalText; }, 1000);
+                    } catch (err) {
+                        console.error('Failed to copy color: ', err);
+                    }
+                });
+                
+                list.appendChild(item);
+            });
+            
+            paletteContainer.appendChild(list);
+        }
+
+        function exportPackedData() {
+            if (!image.src || image.naturalWidth === 0 || currentPalette.length === 0) {
+                console.error("Cannot export: No image or palette loaded.");
+                return;
+            }
+
+            exportButton.textContent = 'Exporting...';
+            exportButton.disabled = true;
+
+            setTimeout(() => {
+                try {
+                    pixelCanvas.width = image.naturalWidth;
+                    pixelCanvas.height = image.naturalHeight;
+                    ctx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+                    ctx.drawImage(image, 0, 0);
+                    
+                    const imageData = ctx.getImageData(0, 0, pixelCanvas.width, pixelCanvas.height);
+                    const data = imageData.data;
+
+                    const paletteMap = new Map();
+                    currentPalette.forEach((color, index) => {
+                        paletteMap.set(color, index);
+                    });
+
+                    const totalPixels = image.naturalWidth * image.naturalHeight;
+                    const outputSize = Math.ceil(totalPixels / 4);
+                    const packedData = new Uint8Array(outputSize);
+
+                    let byte = 0;
+                    let pixelCount = 0;
+                    let byteIndex = 0;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        const a = data[i + 3];
+                        const colorString = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+                        let index = paletteMap.get(colorString);
+                        if (index === undefined || index > 3) {
+                            index = 0;
+                        }
+                        const bitPosition = (3 - pixelCount) * 2;
+                        byte |= (index & 0x03) << bitPosition;
+                        pixelCount++;
+                        if (pixelCount === 4) {
+                            packedData[byteIndex] = byte;
+                            byteIndex++;
+                            byte = 0;
+                            pixelCount = 0;
+                        }
+                    }
+                    if (pixelCount > 0) {
+                        packedData[byteIndex] = byte;
+                    }
+
+                    const blob = new Blob([packedData], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const originalFilename = fileInput.files[0] ? fileInput.files[0].name : 'image.png';
+                    const baseFilename = originalFilename.replace(/\.png$/i, '');
+                    a.download = `${baseFilename}_packed.bin`;
+                    a.href = url;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (e) {
+                    console.error("Export failed:", e);
+                } finally {
+                    exportButton.textContent = 'Export 2-bit';
+                    exportButton.disabled = false;
+                }
+            }, 10);
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            if (currentObjectUrl) {
+                URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl = null;
+            }
+
+            const file = e.target.files[0];
+            
+            if (!file) {
+                return;
+            }
+            
+            paletteContainer.innerHTML = '<p class="palette-text">Loading palette...</p>';
+            exportButton.disabled = true;
+            currentPalette = [];
+            
+            if (file.type === 'image/png') {
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    try {
+                        const arrayBuffer = event.target.result;
+                        const embeddedPalette = parsePngForPlte(arrayBuffer);
+                        
+                        // Create data URL instead of object URL to avoid CORS issues
+                        const base64 = btoa(
+                            new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+                        );
+                        const dataUrl = `data:image/png;base64,${base64}`;
+                        
+                        image.onload = () => {
+                            console.log(`Image loaded: ${image.naturalWidth}x${image.naturalHeight}`);
+                            image.classList.remove('hidden');
+                            instructions.classList.add('hidden');
+                            centerAndResetView();
+                            exportButton.disabled = false;
+                            
+                            if (embeddedPalette) {
+                                displayPalette(embeddedPalette, 'plte');
+                            } else {
+                                paletteContainer.innerHTML = '<p class="palette-text">No embedded palette. Scanning pixels...</p>';
+                                setTimeout(() => extractAndDisplayPalette(), 100);
+                            }
+                        };
+                        
+                        image.onerror = () => {
+                            console.error("Image loading failed");
+                            instructions.textContent = "Error: Could not load image.";
+                            instructions.classList.remove('hidden');
+                            image.classList.add('hidden');
+                            paletteContainer.innerHTML = '<p class="palette-text">Error loading image.</p>';
+                        };
+                        
+                        image.src = dataUrl;
+                    } catch (err) {
+                        console.error("Error processing file:", err);
+                        instructions.textContent = "Error: Could not process file.";
+                        instructions.classList.remove('hidden');
+                        paletteContainer.innerHTML = '<p class="palette-text">Error processing file.</p>';
+                    }
+                };
+                
+                reader.onerror = () => {
+                    console.error("File reading error");
+                    instructions.textContent = "Error: Could not read file.";
+                    instructions.classList.remove('hidden');
+                    paletteContainer.innerHTML = '<p class="palette-text">Error reading file.</p>';
+                };
+                
+                reader.readAsArrayBuffer(file);
+            } else {
+                console.error("Please select a PNG file.");
+                instructions.textContent = "Error: Please select a PNG file.";
+                instructions.classList.remove('hidden');
+                image.classList.add('hidden');
+                exportButton.disabled = true;
+                paletteContainer.innerHTML = '<p class="palette-text">Load a PNG to see palette.</p>';
+            }
+        });
+
+        resetButton.addEventListener('click', centerAndResetView);
+        exportButton.addEventListener('click', exportPackedData);
+
+        viewport.addEventListener('mousedown', (e) => {
+            if (!image.src) return;
+            e.preventDefault();
+            isPanning = true;
+            panStartX = e.clientX - panX;
+            panStartY = e.clientY - panY;
+            viewport.classList.add('grabbing');
+        });
+
+        window.addEventListener('mouseup', () => {
+            isPanning = false;
+            viewport.classList.remove('grabbing');
+        });
+        
+        window.addEventListener('mouseleave', () => {
+            isPanning = false;
+            viewport.classList.remove('grabbing');
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            panX = e.clientX - panStartX;
+            panY = e.clientY - panStartY;
+            updateTransform();
+        });
+
+        viewport.addEventListener('wheel', (e) => {
+            if (!image.src) return;
+            e.preventDefault();
+
+            const viewportRect = viewport.getBoundingClientRect();
+            const mouseX = e.clientX - viewportRect.left;
+            const mouseY = e.clientY - viewportRect.top;
+
+            const zoomFactor = 1.1;
+            const oldScale = scale;
+            
+            let newScale;
+            if (e.deltaY < 0) {
+                newScale = oldScale * zoomFactor;
+            } else {
+                newScale = oldScale / zoomFactor;
+            }
+            
+            scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+
+            const scaleRatio = scale / oldScale;
+            panX = mouseX - (mouseX - panX) * scaleRatio;
+            panY = mouseY - (mouseY - panY) * scaleRatio;
+
+            updateTransform();
+        });
+    </script>
+</body>
+</html>

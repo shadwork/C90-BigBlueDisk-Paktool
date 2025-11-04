@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 
     if (argc < 2)
     {
-        printf("Big Blue Disk pak format utility. Version 1.0.0 By ImpPossible 2025 \n");
+        printf("Big Blue Disk pak format utility. Version 1.0.0 By Imp Possible 2025\n");
         printf(" paktool file.pak            -- analyze file.pak and show info\n");
         printf(" paktool file.pak file.bin   -- unpack file.pak to file.bin\n");
         printf(" paktool file.pak file.bin 0 -- pack file.bin to file.pak with color byte 0\n");        

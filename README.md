@@ -1,5 +1,5 @@
-# C90-BigBlueDisk-Paktool
-Set of tools that can help you working with PAK format that using in Big Blue Disk disk magazine
+![CGA Mix images](images\cga_mix.png "CGA Mix")
+Tools that can help you working with PAK format that using in Big Blue Disk disk magazine. It also help with import export CGA graphics.
 
 ## Disclaimer
 
@@ -42,7 +42,8 @@ All content after header is interpret by following rules Then all data is decode
 
 ### PAKTOOL.EXE
 
-Allow user to show pak file header information and unpack the content into file
+Allow user to show pak file header information, unpack the file or pack the binary data into pak with fixed set of marker [0xf0] and [0x05].
 
-`paktool`
+### PAKVIEW.EXE
 
+Allow user to view pak file as a image using CGA graphics adapter. For windows it create the separate window that emulate CGA video adapter.

@@ -419,3 +419,4 @@ FodyWeavers.xsd
 
 # Windows Installer files from build outputs
 *.exe
+/.vscode

@@ -1,12 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #ifdef WINDOWS
 #include "cga_win.h"
-#else
-#include "cga_dos.h"
+#include "bios_win.h"
 #endif
-
-unsigned char inkey;
+#ifdef MAC
+#include "cga_mac.h"
+#include "bios_mac.h"
+#endif
+#ifdef DOS
+#include "cga_dos.h"
+#include <bios.h>
+#endif
 
 const int RETURN_SUCCESS = 0;
 const int RETURN_ERROR = 1;
@@ -82,6 +88,7 @@ int main(int argc, char* argv[])
 
     if (argc < 2)
     {
+        printf("Big Blue Disk pak format viewer. Version 1.0.0 By Imp Possible 2025\n");        
         printf("pakview file.pak            -- switch to CGA and show unpacked image\n");        
         return(RETURN_SUCCESS);
     }else if(argc < 3)
@@ -100,8 +107,7 @@ int main(int argc, char* argv[])
         unpacked_index = 0;
         init_cga();
         set_mode_cga320();
-        set_color_reg(header.color);
-        set_color_reg(21);        
+        set_color_reg(header.color);   
         while(1){
             reader = read_chunk(file_input,header,&chunk);
             if(reader == RETURN_SUCCESS){
@@ -118,7 +124,7 @@ int main(int argc, char* argv[])
                 }
                 unpacked_index = unpacked_index + chunk.count;                
             }else if (reader == RETURN_EOF){
-                inkey = getchar();             
+                while(bioskey (1)==0);           
                 fclose(file_input);                
                 break;
             }else{
@@ -129,7 +135,7 @@ int main(int argc, char* argv[])
                 return(RETURN_ERROR);
             }
             if(unpacked_index>=16000){
-                inkey = getchar();
+                while(bioskey (1)==0);
                 set_mode_text80();
                 destroy_cga();
                 fclose(file_input);

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Blue Disk PAK Image Viewer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #111827;
+            color: #E5E7EB;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .container {
+            width: 100%;
+            background-color: #1F2937;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 2rem);
+        }
+        
+        header {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #9CA3AF;
+            font-size: 0.875rem;
+        }
+        
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding: 1.25rem 1.5rem;
+            background-color: #1F2937;
+            border-radius: 0.5rem;
+            border: 1px solid #374151;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+            min-width: 180px;
+        }
+        
+        .control-group.inline {
+            flex: 0 1 auto;
+            min-width: auto;
+        }
+        
+        .control-group label {
+            white-space: nowrap;
+            margin: 0;
+        }
+        
+        .button {
+            background-color: #10B981;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .button:hover:not(:disabled) {
+            background-color: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+        
+        .button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .button:disabled {
+            background-color: #374151;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        label {
+            font-weight: 500;
+            color: #9CA3AF;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            flex-shrink: 0;
+        }
+        
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            font-size: 0.875rem;
+            color: #9CA3AF;
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            border-radius: 0.375rem;
+            padding: 0.625rem 0.75rem;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        input[type="file"]::-webkit-file-upload-button {
+            margin-right: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background-color: #4F46E5;
+            color: white;
+            cursor: pointer;
+        }
+        
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: #4338CA;
+        }
+        
+        input[type="number"] {
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            color: white;
+            border-radius: 0.375rem;
+            padding: 0.625rem 0.75rem;
+            outline: none;
+            width: 100%;
+            flex: 1;
+            min-width: 80px;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #4F46E5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+        
+        .toggle-label {
+            font-size: 0.875rem;
+            color: #D1D5DB;
+            font-weight: 500;
+            min-width: 1rem;
+            text-align: center;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #374151;
+            transition: 0.3s;
+            border-radius: 26px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        input:checked + .slider {
+            background-color: #4F46E5;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+        
+        .toggle-switch:hover .slider {
+            opacity: 0.9;
+        }
+        
+        .canvas-container {
+            flex-grow: 1;
+            background-color: #111827;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            padding: 0.5rem;
+            cursor: grab;
+            position: relative;
+        }
+        
+        .canvas-container.panning {
+            cursor: grabbing;
+        }
+        
+        .placeholder {
+            text-align: center;
+            color: #6B7280;
+            z-index: 0;
+        }
+        
+        .placeholder svg {
+            margin: 0 auto 0.5rem;
+            height: 3rem;
+            width: 3rem;
+        }
+        
+        .placeholder h2 {
+            margin-top: 0.5rem;
+            font-size: 1.125rem;
+            font-weight: 500;
+        }
+        
+        .placeholder p {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        canvas {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background-color: #111827;
+            transform-origin: 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        canvas.hidden {
+            display: none;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .image-info {
+            text-align: center;
+            margin-top: 1rem;
+            color: #9CA3AF;
+            font-size: 0.875rem;
+            height: 1.25rem;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Big Blue Disk PAK Image Viewer</h1>
+            <p class="subtitle">Load a .pak file to decode and view the compressed CGA image.</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="fileInput">Load File</label>
+                <input type="file" id="fileInput" accept=".pak">
+            </div>
+
+            <div class="control-group">
+                <label for="widthInput">Width (bytes)</label>
+                <input type="number" id="widthInput" value="80" min="1">
+            </div>
+
+            <div class="control-group inline">
+                <label>Palette</label>
+                <div class="toggle-container">
+                    <span class="toggle-label">0</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="paletteToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">1</span>
+                </div>
+            </div>
+
+            <button id="downloadBtn" class="button" disabled>Download Unpacked</button>
+        </div>
+
+        <div id="canvas-container" class="canvas-container">
+            <div id="placeholder" class="placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h2>Your rendered image will appear here</h2>
+                <p>Please select a file to begin.</p>
+            </div>
+            <canvas id="cgaCanvas" class="hidden"></canvas>
+        </div>
+        <div id="imageInfo" class="image-info"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const widthInput = document.getElementById('widthInput');
+        const paletteToggle = document.getElementById('paletteToggle');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvas = document.getElementById('cgaCanvas');
+        const canvasContainer = document.getElementById('canvas-container');
+        const placeholder = document.getElementById('placeholder');
+        const imageInfo = document.getElementById('imageInfo');
+        const ctx = canvas.getContext('2d');
+
+        const CGA_16_COLORS = [
+            '#000000', '#0000AA', '#00AA00', '#00AAAA',
+            '#AA0000', '#AA00AA', '#AA5500', '#AAAAAA',
+            '#555555', '#5555FF', '#55FF55', '#55FFFF',
+            '#FF5555', '#FF55FF', '#FFFF55', '#FFFFFF'
+        ];
+
+        let PALETTE_0_LOW = [CGA_16_COLORS[0], CGA_16_COLORS[2], CGA_16_COLORS[4], CGA_16_COLORS[6]];
+        let PALETTE_0_HIGH = [CGA_16_COLORS[0], CGA_16_COLORS[10], CGA_16_COLORS[12], CGA_16_COLORS[14]];
+        let PALETTE_1_LOW = [CGA_16_COLORS[0], CGA_16_COLORS[3], CGA_16_COLORS[5], CGA_16_COLORS[7]];
+        let PALETTE_1_HIGH = [CGA_16_COLORS[0], CGA_16_COLORS[11], CGA_16_COLORS[13], CGA_16_COLORS[15]];
+
+        let fileBytes = null;
+        let originalFileName = '';
+        let isBright = 0;
+        let currentScale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isPanning = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        fileInput.addEventListener('change', handleFileSelect);
+        widthInput.addEventListener('input', () => renderImage(true));
+        paletteToggle.addEventListener('change', () => renderImage(false));
+        downloadBtn.addEventListener('click', downloadUnpacked);
+
+        canvasContainer.addEventListener('mousedown', (e) => {
+            if (!fileBytes) return;
+            isPanning = true;
+            canvasContainer.classList.add('panning');
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        canvasContainer.addEventListener('mouseup', () => {
+            isPanning = false;
+            canvasContainer.classList.remove('panning');
+        });
+
+        canvasContainer.addEventListener('mouseleave', () => {
+            isPanning = false;
+            canvasContainer.classList.remove('panning');
+        });
+
+        canvasContainer.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            const dx = e.clientX - lastMouseX;
+            const dy = e.clientY - lastMouseY;
+            translateX += dx;
+            translateY += dy;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            applyTransform();
+        });
+
+        canvasContainer.addEventListener('wheel', (e) => {
+            if (!fileBytes) return;
+            e.preventDefault();
+            const rect = canvasContainer.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const zoomDirection = e.deltaY < 0 ? 1.1 : 0.9;
+            const newScale = currentScale * zoomDirection;
+            const minScale = 0.1;
+            const maxScale = 100;
+            if (newScale < minScale || newScale > maxScale) return;
+            translateX = mouseX - (mouseX - translateX) * zoomDirection;
+            translateY = mouseY - (mouseY - translateY) * zoomDirection;
+            currentScale = newScale;
+            applyTransform();
+        });
+
+        function applyTransform() {
+            canvas.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+            updateImageInfo();
+        }
+
+        function decodePakFile(arrayBuffer) {
+            if (arrayBuffer.byteLength < 3) {
+                console.error("Invalid PAK file: Header too small.");
+                return null;
+            }
+
+            const view = new DataView(arrayBuffer);
+            const colorByte = view.getUint8(0);
+            const bgAndBorderIndex = colorByte & 0x0F;
+            const bgAndBorderColor = CGA_16_COLORS[bgAndBorderIndex];
+            const paletteSelect = (colorByte >> 5) & 1;
+
+            canvasContainer.style.backgroundColor = bgAndBorderColor;
+            paletteToggle.checked = (paletteSelect === 1);
+            isBright = (colorByte >> 4) & 1;
+
+            PALETTE_0_LOW[0] = bgAndBorderColor;
+            PALETTE_0_HIGH[0] = bgAndBorderColor;
+            PALETTE_1_LOW[0] = bgAndBorderColor;
+            PALETTE_1_HIGH[0] = bgAndBorderColor;
+
+            const markerA = view.getUint8(1);
+            const markerB = view.getUint8(2);
+            const decodedData = [];
+            let i = 3;
+
+            while (i < view.byteLength) {
+                const currentByte = view.getUint8(i);
+                if (currentByte === markerA) {
+                    if (i + 2 >= view.byteLength) {
+                        console.warn("PAK file truncated during Marker A packet.");
+                        break;
+                    }
+                    const count = view.getUint8(i + 1) + 4;
+                    const byteToRepeat = view.getUint8(i + 2);
+                    for (let j = 0; j < count; j++) {
+                        decodedData.push(byteToRepeat);
+                    }
+                    i += 3;
+                } else if (currentByte === markerB) {
+                    if (i + 3 >= view.byteLength) {
+                        console.warn("PAK file truncated during Marker B packet.");
+                        break;
+                    }
+                    const count = view.getUint16(i + 1, true);
+                    const byteToRepeat = view.getUint8(i + 3);
+                    for (let j = 0; j < count; j++) {
+                        decodedData.push(byteToRepeat);
+                    }
+                    i += 4;
+                } else {
+                    decodedData.push(currentByte);
+                    i += 1;
+                }
+            }
+            return new Uint8Array(decodedData);
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                fileBytes = null;
+                originalFileName = '';
+                placeholder.classList.remove('hidden');
+                canvas.classList.add('hidden');
+                imageInfo.textContent = '';
+                downloadBtn.disabled = true;
+                canvasContainer.style.backgroundColor = '#111827';
+                PALETTE_0_LOW[0] = '#000000';
+                PALETTE_0_HIGH[0] = '#000000';
+                PALETTE_1_LOW[0] = '#000000';
+                PALETTE_1_HIGH[0] = '#000000';
+                isBright = 0;
+                return;
+            }
+
+            originalFileName = file.name.replace(/\.pak$/i, '');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const decodedBytes = decodePakFile(e.target.result);
+                if (!decodedBytes) {
+                    fileBytes = null;
+                    originalFileName = '';
+                    imageInfo.textContent = 'Error: Could not decode .pak file.';
+                    placeholder.classList.remove('hidden');
+                    canvas.classList.add('hidden');
+                    downloadBtn.disabled = true;
+                    canvasContainer.style.backgroundColor = '#111827';
+                    PALETTE_0_LOW[0] = '#000000';
+                    PALETTE_0_HIGH[0] = '#000000';
+                    PALETTE_1_LOW[0] = '#000000';
+                    PALETTE_1_HIGH[0] = '#000000';
+                    isBright = 0;
+                    return;
+                }
+                fileBytes = decodedBytes;
+                downloadBtn.disabled = false;
+                renderImage(true);
+            };
+            reader.onerror = (e) => {
+                console.error("File could not be read!", e);
+                fileBytes = null;
+                originalFileName = '';
+                downloadBtn.disabled = true;
+                imageInfo.textContent = 'Error: Could not read the file.';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderImage(fullReset = true) {
+            if (!fileBytes) return;
+            let widthInBytes = parseInt(widthInput.value, 10);
+            if (isNaN(widthInBytes) || widthInBytes <= 0) widthInBytes = 80;
+            widthInput.value = widthInBytes;
+
+            placeholder.classList.add('hidden');
+            canvas.classList.remove('hidden');
+
+            const pixelWidth = widthInBytes * 4;
+            const dataBytes = fileBytes.length;
+            const pixelHeight = Math.floor(dataBytes / widthInBytes);
+
+            if (pixelHeight <= 0) {
+                imageInfo.textContent = 'Not enough data to render an image with current settings.';
+                canvas.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                return;
+            }
+
+            if (fullReset) {
+                const containerWidth = canvasContainer.clientWidth;
+                const containerHeight = canvasContainer.clientHeight;
+                const scaleX = containerWidth / pixelWidth;
+                const scaleY = containerHeight / pixelHeight;
+                currentScale = Math.min(scaleX, scaleY, 1);
+                const scaledWidth = pixelWidth * currentScale;
+                const scaledHeight = pixelHeight * currentScale;
+                translateX = (containerWidth - scaledWidth) / 2;
+                translateY = (containerHeight - scaledHeight) / 2;
+                canvas.width = pixelWidth;
+                canvas.height = pixelHeight;
+            }
+
+            applyTransform();
+
+            const usePalette1 = paletteToggle.checked;
+            let activePalette;
+            if (usePalette1) {
+                activePalette = (isBright === 1) ? PALETTE_1_HIGH : PALETTE_1_LOW;
+            } else {
+                activePalette = (isBright === 1) ? PALETTE_0_HIGH : PALETTE_0_LOW;
+            }
+
+            ctx.fillStyle = activePalette[0];
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            updateImageInfo();
+
+            for (let y = 0; y < pixelHeight; y++) {
+                for (let xByte = 0; xByte < widthInBytes; xByte++) {
+                    const byteIndex = (y * widthInBytes) + xByte;
+                    if (byteIndex >= fileBytes.length) break;
+                    const byte = fileBytes[byteIndex];
+                    const p1 = (byte >> 6) & 3;
+                    const p2 = (byte >> 4) & 3;
+                    const p3 = (byte >> 2) & 3;
+                    const p4 = (byte >> 0) & 3;
+                    const currentPixelX = xByte * 4;
+                    ctx.fillStyle = activePalette[p1];
+                    ctx.fillRect(currentPixelX, y, 1, 1);
+                    ctx.fillStyle = activePalette[p2];
+                    ctx.fillRect(currentPixelX + 1, y, 1, 1);
+                    ctx.fillStyle = activePalette[p3];
+                    ctx.fillRect(currentPixelX + 2, y, 1, 1);
+                    ctx.fillStyle = activePalette[p4];
+                    ctx.fillRect(currentPixelX + 3, y, 1, 1);
+                }
+            }
+        }
+
+        function downloadUnpacked() {
+            if (!fileBytes) return;
+            
+            const blob = new Blob([fileBytes], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = originalFileName + '_unpacked.bin';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function updateImageInfo() {
+            if (!fileBytes) {
+                imageInfo.textContent = '';
+                return;
+            }
+            const pixelWidth = canvas.width;
+            const pixelHeight = canvas.height;
+            if (pixelWidth === 0 || pixelHeight === 0) {
+                imageInfo.textContent = '';
+                return;
+            }
+            imageInfo.textContent = `Image: ${pixelWidth}px x ${pixelHeight}px | Zoom: ${currentScale.toFixed(2)}x`;
+        }
+
+        window.addEventListener('resize', () => {
+            renderImage(true);
+        });
+    </script>
+</body>
+</html>
