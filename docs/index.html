@@ -145,7 +145,7 @@
 
         @media (min-width: 900px) {
             .tools-grid {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(4, 1fr); /* Adjusted for 4 cards */
             }
         }
 
@@ -206,6 +206,11 @@
         .export-card {
             border-left: 3px solid #7C3AED;
         }
+        
+        .font-export-card {
+            border-left: 3px solid #F59E0B; /* Unique color for Font Tool (Yellow/Amber) */
+        }
+
 
         footer {
             text-align: center;
@@ -296,6 +301,14 @@
                 </svg>
                 <h3>CGA Exporter</h3>
                 <p>Load PNG images, extract their palette, and export as 2-bit packed binary data suitable for CGA display.</p>
+            </a>
+            
+            <a href="font_exporter.html" class="tool-card font-export-card">
+                <svg class="tool-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m-4-8h8m-4 8l-4-4m4 4l4-4m-4-12L8 8m4-4l4 4"/>
+                </svg>
+                <h3>Pixel Font Extractor</h3>
+                <p>Load a monochrome spritesheet and extract individual character blocks into a byte array suitable for embedded systems (e.g., C/C++).</p>
             </a>
         </div>
 

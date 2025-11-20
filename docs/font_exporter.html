@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Pixel Font Extractor</title>
+    <style>
+        /* Custom styles for the char display area */
+        .char-display-canvas {
+            image-rendering: pixelated; 
+        }
+        /* Custom styles for the full spritesheet preview */
+        .preview-canvas {
+            border: 1px solid #4b5563; /* Darker border for preview canvas */
+        }
+        /* Styling for the custom toggle switch */
+        .toggle-switch-input:checked + .toggle-switch-label .toggle-switch-slider {
+            background-color: #4f46e5; /* Track color change to indigo when checked */
+        }
+        /* Toggles thumb position (targets the immediate child div of the slider track) */
+        .toggle-switch-input:checked + .toggle-switch-label .toggle-switch-slider > div {
+            transform: translateX(1.5rem); /* Moves the thumb right */
+        }
+        /* Style for the range slider track */
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 0.5rem;
+            background: #4b5563; /* Dark gray track */
+            border-radius: 0.25rem;
+        }
+        input[type=range]::-moz-range-track {
+            height: 0.5rem;
+            background: #4b5563; /* Dark gray track */
+            border-radius: 0.25rem;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 9999px;
+            background: #4f46e5;
+            margin-top: -0.375rem; /* Center the thumb vertically */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 9999px;
+            background: #4f46e5;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: none;
+        }
+
+        /* Basic styles to replicate the dark theme and layout without Tailwind */
+        body {
+            background-color: #111827; /* bg-gray-950 */
+            min-height: 100vh;
+            padding: 1rem;
+            font-family: sans-serif;
+            color: #d1d5db; /* text-gray-200 */
+        }
+        .container-box {
+            max-width: 800px; /* max-w-5xl (approximated) */
+            margin: 0 auto;
+            background-color: #1f2937; /* bg-gray-800 */
+            padding: 2rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); /* shadow-2xl */
+            border: 1px solid #374151; /* border border-gray-700 */
+        }
+        h1 {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 800; /* font-extrabold */
+            color: #818cf8; /* text-indigo-400 */
+            margin-bottom: 0.5rem;
+        }
+        label {
+            display: block;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            color: #9ca3af; /* text-gray-400 */
+            margin-bottom: 0.25rem;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 0.5rem;
+            border: 1px solid #374151; /* border border-gray-700 */
+            background-color: #374151; /* bg-gray-700 */
+            color: white;
+            border-radius: 0.5rem; /* rounded-lg */
+        }
+        .grid-layout {
+            display: grid;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .grid-layout {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+    </style>
+    <script>
+        // Global variables for Firebase access (required by the environment, kept as empty/default)
+        const __app_id = 'default-app-id';
+        const __firebase_config = '{}';
+        const __initial_auth_token = '';
+    </script>
+</head>
+<body class="bg-gray-950 min-h-screen p-4 sm:p-8 font-sans text-gray-200">
+
+    <div id="app" class="max-w-5xl mx-auto container-box">
+        <header style="text-align: center; margin-bottom: 2rem;">
+            <h1>Dynamic Pixel Font Extractor</h1>
+            <p style="color: #9ca3af;">Extracts custom-sized blocks from a monochrome spritesheet. Use the slider or keyboard to browse.</p>
+        </header>
+
+        <div class="bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700 container-box">
+
+            <div class="mb-6 flex space-x-4 items-end" style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem;">
+                <div style="flex-grow: 1;">
+                    <label for="pngInput" style="color: #9ca3af; font-size: 0.875rem;">Upload PNG Spritesheet</label>
+                    <input type="file" id="pngInput" accept="image/png" style="width: 100%; font-size: 0.875rem; color: #d1d5db; border: 1px solid #374151; padding: 0.25rem; background-color: #111827; border-radius: 0.5rem;">
+                </div>
+                <button id="exportButton" onclick="exportFontData()" style="padding: 0.5rem 1rem; color: white; font-weight: 600; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); transition: background-color 150ms ease-in-out; background-color: #374151; cursor: not-allowed;" disabled>
+                    Export 8-byte Font
+                </button>
+            </div>
+
+            <div class="mb-6 space-y-4 md:flex md:space-y-0 md:space-x-4 items-end" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem;">
+                
+                <div style="display: flex; gap: 1rem;">
+                    <div>
+                        <label for="blockSizeWInput">Block Width</label>
+                        <input type="number" id="blockSizeWInput" value="8" min="1" style="width: 5rem; text-align: center; font-family: monospace;">
+                    </div>
+                    <div>
+                        <label for="blockSizeHInput">Block Height</label>
+                        <input type="number" id="blockSizeHInput" value="8" min="1" style="width: 5rem; text-align: center; font-family: monospace;">
+                    </div>
+                </div>
+
+                <div style="flex-grow: 1;">
+                    <label for="charInput">Current Character</label>
+                    <input type="text" id="charInput" value="A" maxlength="1" style="width: 100%; text-align: center; font-family: monospace; text-transform: uppercase;" readonly>
+                </div>
+
+                <div style="flex-grow: 1;">
+                    <label style="opacity: 0; pointer-events: none;">Status</label> 
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <span style="font-size: 0.875rem; font-weight: 500; color: #9ca3af; white-space: nowrap;">Invert Colors:</span>
+                        <input type="checkbox" id="invertSwitch" class="toggle-switch-input hidden" onchange="displayCharacter()" style="display: none;">
+                        <label for="invertSwitch" class="toggle-switch-label cursor-pointer" style="cursor: pointer;">
+                            <div class="toggle-switch-slider w-12 h-6 bg-gray-600 rounded-full shadow-inner transition duration-200 ease-in-out relative" style="width: 3rem; height: 1.5rem; background-color: #4b5563; border-radius: 9999px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); position: relative;">
+                                <div style="width: 1.5rem; height: 1.5rem; background-color: white; border-radius: 9999px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); position: absolute; top: 0; left: 0; transition: transform 200ms ease-in-out;"></div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6" style="margin-bottom: 1.5rem;">
+                <label for="charSlider" style="margin-bottom: 0.5rem;">
+                    Block Index (<span id="sliderValue">65</span> / <span id="sliderMax">256</span>)
+                </label>
+                <input type="range" id="charSlider" min="0" max="255" value="65" style="width: 100%; height: 0.5rem; background-color: #4b5563; border-radius: 0.5rem; appearance: none; cursor: pointer;">
+            </div>
+
+            <div id="messageBox" style="padding: 0.75rem; margin-bottom: 1.5rem; border-radius: 0.5rem; transition: all 300ms; display: none;"></div>
+            
+            <div class="grid-layout">
+                <div style="padding: 1rem; border-radius: 0.5rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); display: flex; flex-direction: column; align-items: center;">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">8x Scaled Character</h2>
+                    <canvas id="charCanvas" width="64" height="64" class="char-display-canvas" style="box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); border: 4px solid #4f46e5;"></canvas>
+                    <p id="charInfo" style="font-size: 0.875rem; color: #9ca3af; margin-top: 0.5rem; font-family: monospace;"></p>
+                </div>
+
+                <div style="padding: 1rem; border-radius: 0.5rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); display: flex; flex-direction: column; align-items: center;">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Monochrome Spritesheet</h2>
+                    <canvas id="previewCanvas" class="preview-canvas" style="border-radius: 0.5rem; max-width: 100%; height: auto;"></canvas>
+                    <p id="imageInfo" style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; text-align: center;"></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const pngInput = document.getElementById('pngInput');
+        const blockSizeWInput = document.getElementById('blockSizeWInput');
+        const blockSizeHInput = document.getElementById('blockSizeHInput');
+        const charInput = document.getElementById('charInput');
+        const charSlider = document.getElementById('charSlider');
+        const sliderValueDisplay = document.getElementById('sliderValue');
+        const sliderMaxDisplay = document.getElementById('sliderMax');
+        const messageBox = document.getElementById('messageBox');
+        const charCanvas = document.getElementById('charCanvas');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const charInfo = document.getElementById('charInfo');
+        const imageInfo = document.getElementById('imageInfo');
+        const exportButton = document.getElementById('exportButton');
+
+        const SCALE = 8; // 8x scale remains constant
+
+        let sourceImageCanvas = null; // Canvas to hold the processed image data
+
+        /**
+         * Reads the current block width and height from the inputs.
+         * @returns {{width: number, height: number}}
+         */
+        function getBlockSize() {
+            const w = parseInt(blockSizeWInput.value) || 8;
+            const h = parseInt(blockSizeHInput.value) || 8;
+            return { width: w, height: h };
+        }
+
+        /**
+         * Checks the current state and enables/disables the export button.
+         */
+        function checkExportReadiness() {
+            const { width: blockW, height: blockH } = getBlockSize();
+
+            if (sourceImageCanvas && blockW === 8 && blockH === 8) {
+                exportButton.disabled = false;
+                // Dark mode enabled state: vibrant indigo
+                exportButton.style.backgroundColor = '#4f46e5';
+                exportButton.style.cursor = 'pointer';
+                exportButton.title = 'Ready to export font data (8x8 blocks).';
+            } else {
+                exportButton.disabled = true;
+                // Dark mode disabled state: dark gray
+                exportButton.style.backgroundColor = '#374151';
+                exportButton.style.cursor = 'not-allowed';
+                if (!sourceImageCanvas) {
+                    exportButton.title = 'Export requires an image to be loaded.';
+                } else {
+                    exportButton.title = `Export requires Block Size set to 8x8. Current size: ${blockW}x${blockH}.`;
+                }
+            }
+        }
+
+        /**
+         * Shows a message in the message box.
+         * @param {string} message - The message text.
+         * @param {string} type - 'success', 'error', or 'info'.
+         */
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            
+            // Reset styles
+            messageBox.style.display = 'block';
+            messageBox.style.color = 'white';
+            messageBox.style.border = '1px solid transparent';
+            
+            // Dark mode colors for messages
+            switch (type) {
+                case 'success':
+                    messageBox.style.backgroundColor = '#166534'; /* bg-green-800 */
+                    messageBox.style.borderColor = '#4ade80'; /* border-green-600 */
+                    break;
+                case 'error':
+                    messageBox.style.backgroundColor = '#991b1b'; /* bg-red-800 */
+                    messageBox.style.borderColor = '#f87171'; /* border-red-600 */
+                    break;
+                case 'info':
+                default:
+                    messageBox.style.backgroundColor = '#1e40af'; /* bg-blue-800 */
+                    messageBox.style.borderColor = '#60a5fa'; /* border-blue-600 */
+                    break;
+            }
+        }
+
+        /**
+         * Converts the given canvas image data to strict black and white using a luminance threshold.
+         */
+        function convertToMonochrome(ctx, width, height) {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            const threshold = 128; // Standard luminance threshold
+
+            for (let i = 0; i < data.length; i += 4) {
+                const luminance = (0.2126 * data[i]) + (0.7152 * data[i + 1]) + (0.0722 * data[i + 2]);
+                const color = luminance > threshold ? 255 : 0; 
+
+                data[i] = color;      // Red
+                data[i + 1] = color; // Green
+                data[i + 2] = color; // Blue
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        /**
+         * Extracts and displays the selected character block.
+         * @param {number} [indexOverride] - Optional block index to use instead of the slider value.
+         */
+        function displayCharacter(indexOverride) {
+            if (!sourceImageCanvas) {
+                if (indexOverride !== undefined) {
+                    updateCharacter(indexOverride);
+                }
+                return;
+            }
+
+            const { width: blockW, height: blockH } = getBlockSize();
+            const charCtx = charCanvas.getContext('2d');
+            
+            const fullW = sourceImageCanvas.width;
+            const cols = fullW / blockW; // Number of columns
+            
+            const blockIndex = indexOverride !== undefined ? indexOverride : parseInt(charSlider.value);
+            const char = charInput.value; 
+
+            // Index to coordinates calculation
+            const blockX = blockIndex % cols; // Column index of the block
+            const blockY = Math.floor(blockIndex / cols); // Row index of the block
+            
+            // Source coordinates (top-left of the block)
+            const sx = blockX * blockW;
+            const sy = blockY * blockH;
+
+            // Update canvas dimensions based on new block size
+            charCanvas.width = blockW * SCALE;
+            charCanvas.height = blockH * SCALE;
+
+            // This check should not be needed if slider max is set correctly, but ensures block dimensions are valid
+            if (sx >= fullW || sy >= sourceImageCanvas.height) {
+                showMessage(`Calculated index ${blockIndex} resulted in invalid coordinates. This should not happen.`, 'error');
+                charInfo.textContent = `Index: ${blockIndex} (INVALID)`;
+                return;
+            }
+            
+            const sourceCtx = sourceImageCanvas.getContext('2d');
+            const imageData = sourceCtx.getImageData(sx, sy, blockW, blockH);
+            const data = imageData.data;
+
+            const isInverted = document.getElementById('invertSwitch').checked;
+
+            // Define display colors based on the invert state, using strict black and white
+            // Non-inverted: FG=Black, BG=White
+            // Inverted: FG=White, BG=Black
+            const displayFgColor = isInverted ? '#FFFFFF' : '#000000'; // Strict White or Black
+            const displayBgColor = isInverted ? '#000000' : '#FFFFFF'; // Strict Black or White
+            
+            // Grid/Border settings
+            const gridColor = '#374151'; // Tailwind gray-700 for the grid lines
+            const borderSize = 1; // 1 pixel border width
+            
+            // 1. Fill the entire canvas with the grid color to create the lines
+            charCtx.fillStyle = gridColor;
+            charCtx.fillRect(0, 0, charCanvas.width, charCanvas.height);
+            charCanvas.style.backgroundColor = gridColor;
+            
+            const FG_SOURCE_VAL = 0; // Black (0) in the source image is the default foreground pixel
+            
+            // 2. Draw the inner (SCALE-1)x(SCALE-1) pixels with the appropriate color
+            for (let y = 0; y < blockH; y++) {
+                for (let x = 0; x < blockW; x++) {
+                    const i = (y * blockW + x) * 4;
+                    const pixelValue = data[i]; 
+                    
+                    let fillColor;
+                    // Source black (0) is the actual foreground content of the sprite
+                    if (pixelValue === FG_SOURCE_VAL) {
+                        fillColor = displayFgColor;
+                    } else {
+                        fillColor = displayBgColor;
+                    }
+
+                    // Draw the inner pixel, leaving a 1px border/grid
+                    charCtx.fillStyle = fillColor;
+                    charCtx.fillRect(
+                        x * SCALE + borderSize, 
+                        y * SCALE + borderSize, 
+                        SCALE - borderSize,        
+                        SCALE - borderSize         
+                    );
+                }
+            }
+
+            charInfo.textContent = `Block Index: ${blockIndex} (Char: ${char}) - Coords: (Col: ${blockX}, Row: ${blockY})`;
+            showMessage(`Displaying ${blockW}x${blockH} block at index ${blockIndex} scaled ${SCALE}x.`, 'success');
+        }
+
+        /**
+         * Updates all controls and displays the character based on a given index (block index).
+         * @param {number} blockIndex - The 0-based index of the block in the spritesheet to display.
+         */
+        function updateCharacter(blockIndex) {
+            const maxIndex = parseInt(charSlider.max);
+            
+            if (blockIndex < 0 || blockIndex > maxIndex) {
+                return;
+            }
+
+            charSlider.value = blockIndex;
+            sliderValueDisplay.textContent = blockIndex;
+            
+            // For display purposes, try to convert the index to a character (ASCII/Unicode)
+            const displayChar = blockIndex >= 32 && blockIndex <= 126 ? String.fromCharCode(blockIndex) : '?';
+            charInput.value = displayChar;
+
+            if (sourceImageCanvas) {
+                displayCharacter(blockIndex);
+            }
+        }
+
+        /**
+         * Handles processing of a loaded image and updates the UI constraints (slider max).
+         * @param {HTMLImageElement} img - The loaded image object.
+         */
+        function processImage(img) {
+            const { width: blockW, height: blockH } = getBlockSize();
+            const fullW = img.width;
+            const fullH = img.height;
+
+            // 1. Validation: Must be divisible by block dimensions
+            if (fullW % blockW !== 0 || fullH % blockH !== 0) {
+                showMessage(`Image dimensions (${fullW}x${fullH}) must be divisible by the block size (${blockW}x${blockH}).`, 'error');
+                charCanvas.getContext('2d').clearRect(0, 0, charCanvas.width, charCanvas.height);
+                previewCanvas.width = 0;
+                previewCanvas.height = 0;
+                imageInfo.textContent = '';
+                sourceImageCanvas = null;
+                checkExportReadiness(); // Update button state
+                return;
+            }
+
+            // Setup the source image canvas (hidden, used for processing/data source)
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = fullW;
+            tempCanvas.height = fullH;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0);
+
+            // 2. Color Interpretation: Convert to Black and White
+            convertToMonochrome(tempCtx, fullW, fullH);
+            sourceImageCanvas = tempCanvas;
+
+            // Setup Preview Canvas dimensions
+            previewCanvas.width = fullW;
+            previewCanvas.height = fullH;
+            const previewCtx = previewCanvas.getContext('2d');
+            // Draw the monochrome image to the visible preview canvas
+            previewCtx.drawImage(sourceImageCanvas, 0, 0);
+
+            // Calculate total blocks and max index
+            const cols = fullW / blockW;
+            const rows = fullH / blockH;
+            const totalBlocks = cols * rows;
+            const maxIndex = totalBlocks - 1; // Index starts at 0
+
+            // Set slider range based on image size
+            charSlider.min = 0;
+            charSlider.max = maxIndex;
+            sliderMaxDisplay.textContent = totalBlocks; // Display total count
+
+            // Update image metadata
+            imageInfo.textContent = `Dimensions: ${fullW}x${fullH} | Blocks: ${cols}x${rows} (${totalBlocks} total)`;
+
+            // 3. Display the default/selected character (Index 65 is 'A')
+            const defaultIndex = 65;
+            const initialIndex = defaultIndex > maxIndex ? 0 : defaultIndex;
+            updateCharacter(initialIndex);
+            checkExportReadiness(); // Update button state
+        }
+        
+        /**
+         * Main function to handle file loading and initial processing.
+         */
+        function handleFile(event) {
+            const files = event.target.files || (sourceImageCanvas ? [{type: 'image/png'}] : []);
+            const file = files[0];
+            
+            if (!file || !file.type.match('image/png')) {
+                // If it was triggered by block size change, and no image is loaded, just update the message
+                if (sourceImageCanvas) {
+                    // This means a block size change triggered re-process on a loaded image
+                    // We proceed to re-process using the existing sourceImageCanvas data
+                } else {
+                    showMessage("Please select a valid PNG image file.", 'error');
+                    return;
+                }
+            }
+
+            // If we are triggering a re-process (e.g., from block size change) without a new file, 
+            // use the stored canvas data to re-create the image object.
+            if (sourceImageCanvas && !event.target.files) {
+                const img = new Image();
+                img.onload = () => processImage(img);
+                img.onerror = () => showMessage("Could not load image data from canvas.", 'error');
+                img.src = sourceImageCanvas.toDataURL('image/png');
+                return;
+            }
+
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => processImage(img);
+                img.onerror = () => showMessage("Could not load image file.", 'error');
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /**
+         * Exports the pixel font data for all blocks as an array of 8-byte hexadecimal values.
+         */
+        function exportFontData() {
+            if (!sourceImageCanvas) {
+                showMessage("Please load a spritesheet first.", 'error');
+                return;
+            }
+
+            const { width: blockW, height: blockH } = getBlockSize();
+            const totalBlocks = parseInt(charSlider.max) + 1;
+
+            if (blockW !== 8 || blockH !== 8) {
+                showMessage(`Exporting as 8-byte data is only supported for 8x8 blocks. Current size is ${blockW}x${blockH}.`, 'error');
+                return;
+            }
+
+            const isInverted = document.getElementById('invertSwitch').checked;
+            // Determine which pixel value (0=Black, 255=White) should be treated as the foreground (bit 1)
+            const targetForegroundValue = isInverted ? 255 : 0; 
+            const inversionStatus = isInverted ? 'INVERTED (White pixels are FG=1)' : 'NORMAL (Black pixels are FG=1)';
+
+
+            const fontDataLines = [];
+            const sourceCtx = sourceImageCanvas.getContext('2d');
+            const cols = sourceImageCanvas.width / blockW;
+            
+
+            fontDataLines.push(`// Extracted 8x8 Pixel Font Data (${totalBlocks} characters)`);
+            fontDataLines.push(`// Inversion State (Affects Foreground Bit): ${inversionStatus}`);
+            fontDataLines.push(`// Format: 8 bytes per character (1 byte per row, MSB on the left)`);
+            fontDataLines.push(`// Block Width: ${blockW}, Block Height: ${blockH}`);
+            fontDataLines.push(``);
+            fontDataLines.push(`const unsigned char pixel_font_data[] = {`);
+
+
+            for (let blockIndex = 0; blockIndex < totalBlocks; blockIndex++) {
+                const blockX = blockIndex % cols;
+                const blockY = Math.floor(blockIndex / cols);
+                const sx = blockX * blockW;
+                const sy = blockY * blockH;
+
+                const imageData = sourceCtx.getImageData(sx, sy, blockW, blockH);
+                const data = imageData.data;
+
+                const charBytes = [];
+                
+                for (let y = 0; y < blockH; y++) {
+                    let rowByte = 0;
+                    for (let x = 0; x < blockW; x++) {
+                        const i = (y * blockW + x) * 4;
+                        const pixelValue = data[i];
+
+                        if (pixelValue === targetForegroundValue) {
+                            // Set the bit corresponding to the column (leftmost is MSB, 7 down to 0)
+                            // If pixel matches the target foreground, set the bit to 1
+                            rowByte |= (1 << (7 - x));
+                        }
+                    }
+                    // Format byte as 2-digit hex string with 0x prefix
+                    charBytes.push(`0x${rowByte.toString(16).padStart(2, '0').toUpperCase()}`);
+                }
+                
+                // Add the character data line
+                const charLabel = blockIndex >= 32 && blockIndex <= 126 ? String.fromCharCode(blockIndex) : `Block ${blockIndex}`;
+                fontDataLines.push(`    // ${charLabel}`);
+                fontDataLines.push(`    ${charBytes.join(', ')}${blockIndex === totalBlocks - 1 ? '' : ','}`);
+            }
+
+            fontDataLines.push(`};`);
+
+            const fileContent = fontDataLines.join('\n');
+            const blob = new Blob([fileContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pixel_font_${blockW}x${blockH}_export.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            showMessage(`Successfully exported ${totalBlocks} characters to ${a.download}.`, 'success');
+        }
+        window.exportFontData = exportFontData; // Make function globally accessible
+
+        // --- Event Listeners ---
+        pngInput.addEventListener('change', handleFile);
+        
+        // Listener for block size change (re-processes the image if one is loaded)
+        [blockSizeWInput, blockSizeHInput].forEach(input => {
+            input.addEventListener('change', () => {
+                checkExportReadiness();
+                if (sourceImageCanvas) {
+                    // Trigger re-validation and re-processing
+                    handleFile({ target: { files: [] } }); 
+                } else {
+                    showMessage("Set block size, then upload the PNG spritesheet.", 'info');
+                }
+            });
+        });
+
+        // Listener for the slider input (real-time update)
+        charSlider.addEventListener('input', (event) => {
+            const blockIndex = parseInt(event.target.value);
+            updateCharacter(blockIndex);
+        });
+
+        // Global key listener for instant character selection
+        window.addEventListener('keydown', (event) => {
+            // Do not capture keys if the file or block size inputs are focused.
+            if (document.activeElement === pngInput || document.activeElement === blockSizeWInput || document.activeElement === blockSizeHInput) return;
+            if (event.ctrlKey || event.altKey || event.metaKey) return;
+
+            const key = event.key;
+
+            // Check if it's a single, printable character (but not Enter, etc.)
+            if (key.length === 1 && key.charCodeAt(0) >= 32) {
+                
+                // Prevent the key from interfering with other elements
+                event.preventDefault(); 
+
+                const blockIndex = key.charCodeAt(0);
+                
+                // Update controls and display character
+                updateCharacter(blockIndex);
+            }
+        });
+
+        // Initialize display and sizing info
+        updateCharacter(parseInt(charSlider.value));
+        const { width: defaultW, height: defaultH } = getBlockSize();
+        charCanvas.width = defaultW * SCALE;
+        charCanvas.height = defaultH * SCALE;
+        showMessage("Set your block size and upload the PNG spritesheet.", 'info');
+        checkExportReadiness(); // Initial check for button state
+
+    </script>
+</body>
+</html>
